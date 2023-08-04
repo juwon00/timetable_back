@@ -7,7 +7,7 @@ import jakarta.persistence.Id;
 import lombok.Getter;
 import lombok.Setter;
 
-@Getter @Setter
+@Getter
 @Entity
 public class Timetable {
 
