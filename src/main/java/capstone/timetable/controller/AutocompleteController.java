@@ -30,8 +30,13 @@ public class AutocompleteController {
     }
 
     @GetMapping("/autocomplete-subject")
-    public ResponseEntity<List<String>> getAutocompleteSubject(@RequestParam("query") String query) {
-        List<Timetable> results = autocompleteRepository.findBySubjectContainingOrProfessorContaining(query, query);
+    public ResponseEntity<List<String>> getAutocompleteSubject(@RequestParam("major") String major,
+                                                               @RequestParam("semester") int semester,
+                                                               @RequestParam("query") String query) {
+        List<Timetable> results =
+                autocompleteRepository.findByMajorAndSemesterAndSubjectContainingOrMajorAndSemesterAndProfessorContaining(
+                major, semester, query, major, semester, query
+        );
         List<String> subjectAndProfessorList = results.stream()
                 .map(entry -> entry.getSubject() + " / " + entry.getProfessor() + " 교수님")
                 .distinct()
