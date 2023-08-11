@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import lombok.Getter;
-import lombok.Setter;
 
 @Getter
 @Entity
@@ -30,22 +29,3 @@ public class Timetable {
     private String classRoom; // 수업장소
 
 }
-
-
-
-
-//-- auto-generated definition
-//        create table Timetable
-//        (
-//        timeTableIdx int auto_increment comment '인덱스 번호'
-//        primary key,
-//        major        varchar(1000) not null comment '전공',
-//        grade        int           not null comment '학년',
-//        semester     int           not null comment '학기',
-//        majorRequire varchar(100)  null,
-//        credit       int           null comment '학점',
-//        subject      varchar(100)  null comment '과목명',
-//        professor    varchar(100)  null comment '담당교수명',
-//        classTime    varchar(100)  null comment '수업시간',
-//        classRoom    varchar(100)  null comment '수업장소'
-//        );
