@@ -1,7 +1,9 @@
 package capstone.timetable.repository;
 
-import capstone.timetable.DTO.CreateTimetable;
+import capstone.timetable.model.CreateTimetable;
 import capstone.timetable.domain.Timetable;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import org.springframework.stereotype.Repository;
@@ -15,7 +17,7 @@ public class TimetableRepository {
     @PersistenceContext
     private EntityManager em;
 
-    public List<CreateTimetable> findAllSubject(String major, int semester) {
+    public List<CreateTimetable> findAllSubject(String major, int semester) throws JsonProcessingException {
 
         List<CreateTimetable> createTimetableList = new ArrayList<>();
 
@@ -34,7 +36,13 @@ public class TimetableRepository {
             createTimetableList.add(createTimetable);
         }
 
+        ObjectMapper objectMapper = new ObjectMapper();
+        String json = objectMapper.writeValueAsString(createTimetableList);
+
+        System.out.println(json);
+
         return createTimetableList;
+
     }
 }
 

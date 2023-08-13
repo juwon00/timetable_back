@@ -1,7 +1,8 @@
 package capstone.timetable.controller;
 
-import capstone.timetable.DTO.CreateTimetable;
+import capstone.timetable.model.CreateTimetable;
 import capstone.timetable.service.TimetableService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +24,8 @@ public class TimetableController {
             @RequestParam("majorCredit") int majorCredit,
             @RequestParam("culturalCredit") int culturalCredit,
             @RequestParam("freeSelectCredit") int freeSelectCredit,
-            @RequestParam("hopeSubject") String hopeSubject,
-            @RequestParam("noTime") String noTime) {
+            @RequestParam("hopeSubject") List<String> hopeSubject,
+            @RequestParam("noTime") List<String> noTime) throws JsonProcessingException {
 
         List<CreateTimetable> timetableResults = timetableService.generateTimetable(
                 major, grade, semester, majorCredit, culturalCredit,

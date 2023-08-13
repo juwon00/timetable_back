@@ -1,4 +1,4 @@
-package capstone.timetable.DTO;
+package capstone.timetable.model;
 
 import lombok.Getter;
 import lombok.Setter;
