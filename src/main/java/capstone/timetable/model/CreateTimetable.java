@@ -6,6 +6,7 @@ import lombok.Setter;
 @Getter @Setter
 public class CreateTimetable {
     private String subject;
+    private String professor;
     private String classRoom;
     private String classTime;
     private int grade;

@@ -30,6 +30,7 @@ public class TimetableRepository {
         for (Timetable timetable : timetableList) {
             CreateTimetable createTimetable = new CreateTimetable();
             createTimetable.setSubject(timetable.getSubject());
+            createTimetable.setProfessor(timetable.getProfessor());
             createTimetable.setClassRoom(timetable.getClassRoom());
             createTimetable.setClassTime(timetable.getClassTime());
             createTimetable.setGrade(timetable.getGrade());
