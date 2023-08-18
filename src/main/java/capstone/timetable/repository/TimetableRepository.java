@@ -34,13 +34,9 @@ public class TimetableRepository {
             createTimetable.setClassRoom(timetable.getClassRoom());
             createTimetable.setClassTime(timetable.getClassTime());
             createTimetable.setGrade(timetable.getGrade());
+            createTimetable.setCredit(timetable.getCredit());
             createTimetableList.add(createTimetable);
         }
-
-        ObjectMapper objectMapper = new ObjectMapper();
-        String json = objectMapper.writeValueAsString(createTimetableList);
-
-        System.out.println(json);
 
         return createTimetableList;
 

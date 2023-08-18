@@ -33,9 +33,9 @@ public class TimetableService {
             for (int hour = 0; hour < 13; hour++) {
                 for (int day = 0; day < 7; day++) {
                     if (timetable[hour][day] != null) {
-                        System.out.printf("%-30s", timetable[hour][day].getSubject());
+                        System.out.printf("%-10s", timetable[hour][day].getSubject());
                     } else {
-                        System.out.printf("%-30s", " - ");
+                        System.out.printf("%-10s", " - ");
                     }
                 }
                 System.out.println();
@@ -45,7 +45,20 @@ public class TimetableService {
             System.out.println();
         }
 
+        // 위의 원하는 과목 중복없이 추출한 리스트
+        List<List<CreateTimetable>> transformedMatchingSubjects = transformedMatchingSubjectsProcess(matchingSubjects);
+        for (List<CreateTimetable> blockTimetable : transformedMatchingSubjects) {
+            for (CreateTimetable entry : blockTimetable) {
+                System.out.println(entry.getSubject() + " " + entry.getClassTime());
+            }
+            System.out.println();
+            System.out.println();
+        }
+
         // 4. 전공 - 교양 - 자선 순으로 시간표 만들기
+        int listenMajorCredit = listenMajorCreditProcess(hopeSubject, allMajorSubject);
+        List<List<List<CreateTimetable>>> majorInTimetable = majorSubjectProcess(matchingSubjects, majorCredit, removeNoTimeSubject, listenMajorCredit);
+
 
 
         return removeNoTimeSubject;
@@ -58,8 +71,8 @@ public class TimetableService {
      *  2. 안되는 시간 처리하기
      */
     public List<CreateTimetable> noTimeProcess(List<CreateTimetable> createTimetables, List<String> noTime) {
-        List<CreateTimetable> timetablesToRemove = new ArrayList<>();
 
+        List<CreateTimetable> timetablesToRemove = new ArrayList<>();
         for (CreateTimetable timetable : createTimetables) {
             String classTime = timetable.getClassTime();
             for (String noTimeSlot : noTime) {
@@ -143,13 +156,18 @@ public class TimetableService {
      */
     public List<CreateTimetable[][]> hopeSubjectProcess(List<String> hopeSubject, List<CreateTimetable> removeNoTimeSubject) throws JsonProcessingException {
 
-
+        // 남은 과목중 희망하는 과목 추출
         List<CreateTimetable> matchingSubjects = findMatchingSubjects(hopeSubject, removeNoTimeSubject);
 
+        // 희망하는 과목을 조합을 이용해 나눔 (내림차순 정렬)
         List<List<CreateTimetable>> combinations = generateCombinations(matchingSubjects);
         combinations.sort((list1, list2) -> Integer.compare(list2.size(), list1.size()));
 
-        List<CreateTimetable[][]> timetableList = generateTimetableList(combinations);
+        // 중복시간을 제거후 짧은것도 제거
+        List<List<CreateTimetable>> hopeTimetableList = removeShortAndOverlapSubject(combinations);
+
+        // 2차원 배열로 변환
+        List<CreateTimetable[][]> timetableList = generateTimetableList(hopeTimetableList);
 
         return timetableList;
     }
@@ -216,14 +234,35 @@ public class TimetableService {
     }
 
 
-    private int getDayIndex(String day) {
-        String[] daysOfWeek = {"월", "화", "수", "목", "금", "토", "일"};
-        for (int i = 0; i < daysOfWeek.length; i++) {
-            if (day.equals(daysOfWeek[i])) {
-                return i;
+    public List<List<CreateTimetable>> removeShortAndOverlapSubject(List<List<CreateTimetable>> combinations){
+
+        List<List<CreateTimetable>>  combinationsRemove = new ArrayList<>();
+        for (List<CreateTimetable> timetables : combinations) {
+            for (int j = 0; j < timetables.size(); j++) {
+                for (int k = j + 1; k < timetables.size(); k++) {
+                    String[] secondClassTimeList = timetables.get(k).getClassTime().split(",");
+
+                    for (String secondClassTime : secondClassTimeList) {
+                        if (isTimeSlotOverlap(timetables.get(j).getClassTime(), secondClassTime)) {
+                            combinationsRemove.add(timetables);
+                        }
+                    }
+                }
             }
         }
-        return -1; // Not found
+        combinations.removeAll(combinationsRemove);
+
+
+        List<List<CreateTimetable>> shortRemoveCreateTimetable = new ArrayList<>();
+        for (List<CreateTimetable> createTimetables : combinations) {
+            int i = combinations.get(0).size();
+            if (createTimetables.size() != i) {
+                shortRemoveCreateTimetable.add(createTimetables);
+            }
+        }
+        combinations.removeAll(shortRemoveCreateTimetable);
+
+        return combinations;
     }
 
     public List<CreateTimetable[][]> generateTimetableList(List<List<CreateTimetable>> combinations) {
@@ -241,25 +280,229 @@ public class TimetableService {
                     String day = partDivide[0];
 
                     int dayIdx = getDayIndex(day);
-                    int startHour = Integer.parseInt(partDivide[1].split("-")[0]);
-                    int endHour = Integer.parseInt(partDivide[1].split("-")[1]);
+
+                    int startHour, endHour;
+                    if (partDivide[1].contains("-")) {
+                        startHour = Integer.parseInt(partDivide[1].split("-")[0]);
+                        endHour = Integer.parseInt(partDivide[1].split("-")[1]);
+                    } else {
+                        startHour = Integer.parseInt(partDivide[1].split("-")[0]);
+                        endHour = startHour;
+                    }
 
                     for (int i = startHour - 1; i < endHour; i++) {
                         timetable[i][dayIdx] = timetableEntry;
                     }
                 }
             }
-//            for (CreateTimetable[] createTimetables : timetable) {
-//                System.out.println(Arrays.toString(createTimetables));
-//            }
-//            System.out.println();
             timetableList.add(timetable);
         }
-
         return timetableList;
     }
 
+    private int getDayIndex(String day) {
+        String[] daysOfWeek = {"월", "화", "수", "목", "금", "토", "일"};
+        for (int i = 0; i < daysOfWeek.length; i++) {
+            if (day.equals(daysOfWeek[i])) {
+                return i;
+            }
+        }
+        return -1; // Not found
+    }
 
+    List<List<CreateTimetable>> transformedMatchingSubjectsProcess(List<CreateTimetable[][]> matchingSubjects) {
+        List<List<CreateTimetable>> transformedMatchingSubjects = new ArrayList<>();
+        for (CreateTimetable[][] timetable : matchingSubjects) {
+            List<CreateTimetable> blockTimetable = new ArrayList<>();
+
+            for (int hour = 0; hour < 13; hour++) {
+                for (int day = 0; day < 7; day++) {
+                    if (timetable[hour][day] != null && !blockTimetable.contains(timetable[hour][day])) {
+                        blockTimetable.add(timetable[hour][day]);
+                    }
+                }
+            }
+            transformedMatchingSubjects.add(blockTimetable);
+        }
+
+        return transformedMatchingSubjects;
+    }
+
+
+    /**
+     *  4. 전공 - 교양 - 자선 순으로 시간표 만들기
+     */
+    private int listenMajorCreditProcess(List<String> hopeSubject, List<CreateTimetable> allMajorSubject) {
+
+        int credit = 0;
+        for (String hope : hopeSubject) {
+            String subject = hope.split("/")[0];
+            String professor = hope.split("/")[1];
+            for (CreateTimetable timetable : allMajorSubject) {
+                if (timetable.getSubject().equals(subject) && timetable.getProfessor().equals(professor)) {
+                    credit = credit + timetable.getCredit();
+                    break;
+                }
+            }
+        }
+        return credit;
+    }
+
+    private List<List<List<CreateTimetable>>> majorSubjectProcess(List<CreateTimetable[][]> matchingSubjects,
+                                                          int majorCredit, List<CreateTimetable> removeNoTimeSubject,
+                                                          int listenMajorCredit) {
+
+        List<CreateTimetable> newRemoveNoTimeSubject = new ArrayList<>(removeNoTimeSubject);
+
+        // 전공 남은 학점
+        int lastMajorCredit = majorCredit - listenMajorCredit;
+
+        // 희망하는 과목 처리
+        List<String> flatMatchingSubjects = new ArrayList<>(); // 겹치는 과목이름
+        List<List<String>> flatMatchingClassTime = new ArrayList<>(); // 겹치는 시간
+
+        for (CreateTimetable[][] timetableArray : matchingSubjects) {
+            List<String> classTimes = new ArrayList<>();
+            for (CreateTimetable[] timetableRow : timetableArray) {
+                for (CreateTimetable timetable : timetableRow) {
+                    if (timetable != null) {
+                        flatMatchingSubjects.add(timetable.getSubject());
+                        if (!classTimes.contains(timetable.getClassTime())){
+                            classTimes.add(timetable.getClassTime());
+                        }
+                    }
+                }
+            }
+            flatMatchingClassTime.add(classTimes);
+        }
+
+        // 과목이름 겹치는 과목 처리
+        List<CreateTimetable> removeOverlapSubject = new ArrayList<>();
+        for (String subject : flatMatchingSubjects) {
+            for (CreateTimetable timetable : newRemoveNoTimeSubject) {
+                if (Objects.equals(timetable.getSubject(), subject)) {
+                    removeOverlapSubject.add(timetable);
+                }
+            }
+        }
+        newRemoveNoTimeSubject.removeAll(removeOverlapSubject);
+
+        // 시간 겹치는 과목 처리
+        List<List<CreateTimetable>> algoTimetable = new ArrayList<>(); // 각 matchingSubjects 에 들어갈 수 있는 전공 과목들
+
+        for (int i = 0; i < matchingSubjects.size(); i++) {
+            algoTimetable.add(new ArrayList<>(newRemoveNoTimeSubject));
+        }
+
+        for (int i = 0; i < algoTimetable.size(); i++) {
+            List<CreateTimetable> removeAlgo = new ArrayList<>();
+            for (int j = 0; j < flatMatchingClassTime.get(i).size(); j++) {
+                for (int k = 0; k < algoTimetable.get(i).size(); k++) {
+                    String[] noTimeList = flatMatchingClassTime.get(i).get(j).split(",");
+                    for (String noTime : noTimeList) {
+                        if (isTimeSlotOverlap(algoTimetable.get(i).get(k).getClassTime(), noTime)){
+                            removeAlgo.add(algoTimetable.get(i).get(k));
+                        }
+                    }
+                }
+            }
+            algoTimetable.get(i).removeAll(removeAlgo);
+        }
+
+
+
+        // 한 시간표에 가능한 전공 리스트들 만들기
+        List<List<List<CreateTimetable>>> resultTimetable = new ArrayList<>();
+        for (List<CreateTimetable> createTimetables : algoTimetable) {
+
+            // 가능한 모든 조합 (과목명은 거름)
+            List<List<CreateTimetable>> combTimetable = generateCombinations(createTimetables, lastMajorCredit);
+
+            // 짧은 시간표들 거름
+            List<List<CreateTimetable>> removeShortTimetable = filterLongestSublists(combTimetable);
+
+            // 겹치는 시간 제거
+            List<List<CreateTimetable>> overlapTimetable = new ArrayList<>();
+            for (List<CreateTimetable> removeShortTimetableList : removeShortTimetable) {
+                for (int i = 0; i < removeShortTimetableList.size(); i++) {
+                    for (int j = i + 1; j < removeShortTimetableList.size(); j++) {
+                        if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), removeShortTimetableList.get(j).getClassTime())) {
+                            overlapTimetable.add(removeShortTimetableList);
+                        }
+                    }
+                }
+            }
+            removeShortTimetable.removeAll(overlapTimetable);
+
+            // 정제된 전공 과목 리스트
+            resultTimetable.add(removeShortTimetable);
+
+        }
+
+        return resultTimetable;
+    }
+
+
+
+
+
+    public List<List<CreateTimetable>> generateCombinations(List<CreateTimetable> courses, int lastMajorCredit) {
+        List<List<CreateTimetable>> result = new ArrayList<>();
+        List<CreateTimetable> course = new ArrayList<>(courses);
+        generateCombinationsRecursive(course, 0, lastMajorCredit, new ArrayList<>(), result);
+        return result;
+    }
+
+    private void generateCombinationsRecursive(
+            List<CreateTimetable> courses,
+            int currentIndex,
+            int remainingCredit,
+            List<CreateTimetable> currentCombination,
+            List<List<CreateTimetable>> result) {
+
+        if (currentIndex == courses.size() || remainingCredit == 0) {
+            result.add(new ArrayList<>(currentCombination));
+            return;
+        }
+
+        // Include the current course
+        CreateTimetable currentCourse = courses.get(currentIndex);
+        int courseCredit = currentCourse.getCredit();
+
+        if (!containsSubject(currentCombination, currentCourse.getSubject()) &&
+                courseCredit <= remainingCredit) {
+            currentCombination.add(currentCourse);
+            generateCombinationsRecursive(courses, currentIndex + 1, remainingCredit - courseCredit, currentCombination, result);
+            currentCombination.remove(currentCombination.size() - 1);
+        }
+
+        // Skip the current course
+        generateCombinationsRecursive(courses, currentIndex + 1, remainingCredit, currentCombination, result);
+    }
+
+    private boolean containsSubject(List<CreateTimetable> combination, String subject) {
+        for (CreateTimetable course : combination) {
+            if (course.getSubject().equals(subject)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<List<CreateTimetable>> filterLongestSublists(List<List<CreateTimetable>> result) {
+        int maxLength = 0;
+
+        // Find the length of the longest sublist
+        for (List<CreateTimetable> sublist : result) {
+            maxLength = Math.max(maxLength, sublist.size());
+        }
+
+        // Remove sublists shorter than the longest one
+        int finalMaxLength = maxLength;
+        result.removeIf(sublist -> sublist.size() < finalMaxLength);
+
+        return result;
+    }
 
 
 }

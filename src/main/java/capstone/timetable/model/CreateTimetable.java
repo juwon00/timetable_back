@@ -10,4 +10,5 @@ public class CreateTimetable {
     private String classRoom;
     private String classTime;
     private int grade;
+    private int credit;
 }
