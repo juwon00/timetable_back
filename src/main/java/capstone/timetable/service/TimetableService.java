@@ -26,8 +26,13 @@ public class TimetableService {
         // 2. 안되는 시간 처리하기
         List<CreateTimetable> removeNoTimeSubject = noTimeProcess(allMajorSubject, noTime);
 
+        // 2-1 제거할 과목 처리하기
+
         // 3. 원하는 과목 먼저 넣기
         List<CreateTimetable[][]> matchingSubjects = hopeSubjectProcess(hopeSubject, removeNoTimeSubject);
+
+        // 위의 원하는 과목 중복없이 추출한 리스트
+        List<List<CreateTimetable>> transformedMatchingSubjects = transformedMatchingSubjectsProcess(matchingSubjects);
 
         for (CreateTimetable[][] timetable : matchingSubjects) {
             for (int hour = 0; hour < 13; hour++) {
@@ -45,20 +50,31 @@ public class TimetableService {
             System.out.println();
         }
 
-        // 위의 원하는 과목 중복없이 추출한 리스트
-        List<List<CreateTimetable>> transformedMatchingSubjects = transformedMatchingSubjectsProcess(matchingSubjects);
-        for (List<CreateTimetable> blockTimetable : transformedMatchingSubjects) {
-            for (CreateTimetable entry : blockTimetable) {
-                System.out.println(entry.getSubject() + " " + entry.getClassTime());
-            }
-            System.out.println();
-            System.out.println();
-        }
 
         // 4. 전공 - 교양 - 자선 순으로 시간표 만들기
         int listenMajorCredit = listenMajorCreditProcess(hopeSubject, allMajorSubject);
         List<List<List<CreateTimetable>>> majorInTimetable = majorSubjectProcess(matchingSubjects, majorCredit, removeNoTimeSubject, listenMajorCredit);
 
+
+        // 원하는 전공 + 임의로 선택된 전공
+        List<List<CreateTimetable>> combinedTimetables = new ArrayList<>();
+        for (List<CreateTimetable> matchingBlock : transformedMatchingSubjects) {
+            for (List<List<CreateTimetable>> majorBlock : majorInTimetable) {
+                for (List<CreateTimetable> majorIn : majorBlock) {
+                    List<CreateTimetable> combinedBlock = new ArrayList<>(matchingBlock);
+                    combinedBlock.addAll(majorIn);
+                    combinedTimetables.add(combinedBlock);
+                }
+
+            }
+        }
+        for (List<CreateTimetable> combinedBlock : combinedTimetables) {
+            System.out.println("group");
+            for (CreateTimetable x : combinedBlock) {
+                System.out.println(x.getSubject() + " " + x.getClassTime() + " " + x.getProfessor());
+            }
+            System.out.println();
+        }
 
 
         return removeNoTimeSubject;
@@ -426,9 +442,22 @@ public class TimetableService {
             for (List<CreateTimetable> removeShortTimetableList : removeShortTimetable) {
                 for (int i = 0; i < removeShortTimetableList.size(); i++) {
                     for (int j = i + 1; j < removeShortTimetableList.size(); j++) {
-                        if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), removeShortTimetableList.get(j).getClassTime())) {
-                            overlapTimetable.add(removeShortTimetableList);
+
+                        if (removeShortTimetableList.get(j).getClassTime().split(",").length >=2 ) {
+                            String[] splitList = removeShortTimetableList.get(j).getClassTime().split(",");
+                            for (String split : splitList) {
+                                if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), split)) {
+                                    overlapTimetable.add(removeShortTimetableList);
+                                }
+                            }
                         }
+                        else {
+                            if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), removeShortTimetableList.get(j).getClassTime())) {
+                                overlapTimetable.add(removeShortTimetableList);
+                            }
+                        }
+
+
                     }
                 }
             }
