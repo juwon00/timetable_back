@@ -18,7 +18,8 @@ public class TimetableService {
     private final TimetableRepository timetableRepository;
 
     public List<CreateTimetable> generateTimetable(String major, int grade, int semester, int majorCredit, int culturalCredit,
-                                                   int freeSelectCredit, List<String> hopeSubject, List<String> noTime) throws JsonProcessingException {
+                                                   int freeSelectCredit, List<String> hopeSubject, List<String> removeSubject,
+                                                   List<String> noTime) throws JsonProcessingException {
 
         // 1. 전공, 학기에 맞는 모든 과목 가져오기
         List<CreateTimetable> allMajorSubject = timetableRepository.findAllSubject(major, semester);

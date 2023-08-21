@@ -25,11 +25,12 @@ public class TimetableController {
             @RequestParam("culturalCredit") int culturalCredit,
             @RequestParam("freeSelectCredit") int freeSelectCredit,
             @RequestParam("hopeSubject") List<String> hopeSubject,
+            @RequestParam("removeSubject") List<String> removeSubject,
             @RequestParam("noTime") List<String> noTime) throws JsonProcessingException {
 
         List<CreateTimetable> timetableResults = timetableService.generateTimetable(
                 major, grade, semester, majorCredit, culturalCredit,
-                freeSelectCredit, hopeSubject, noTime
+                freeSelectCredit, hopeSubject, removeSubject, noTime
         );
 
         return ResponseEntity.ok(timetableResults);
