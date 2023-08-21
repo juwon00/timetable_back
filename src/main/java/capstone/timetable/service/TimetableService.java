@@ -17,7 +17,7 @@ public class TimetableService {
 
     private final TimetableRepository timetableRepository;
 
-    public List<CreateTimetable> generateTimetable(String major, int grade, int semester, int majorCredit, int culturalCredit,
+    public List<List<CreateTimetable>> generateTimetable(String major, int grade, int semester, int majorCredit, int culturalCredit,
                                                    int freeSelectCredit, List<String> hopeSubject, List<String> removeSubject,
                                                    List<String> noTime) throws JsonProcessingException {
 
@@ -28,9 +28,10 @@ public class TimetableService {
         List<CreateTimetable> removeNoTimeSubject = noTimeProcess(allMajorSubject, noTime);
 
         // 2-1 제거할 과목 처리하기
+        List<CreateTimetable> removeWantSubject = removeWantProcess(removeNoTimeSubject, removeSubject);
 
         // 3. 원하는 과목 먼저 넣기
-        List<CreateTimetable[][]> matchingSubjects = hopeSubjectProcess(hopeSubject, removeNoTimeSubject);
+        List<CreateTimetable[][]> matchingSubjects = hopeSubjectProcess(hopeSubject, removeWantSubject);
 
         // 위의 원하는 과목 중복없이 추출한 리스트
         List<List<CreateTimetable>> transformedMatchingSubjects = transformedMatchingSubjectsProcess(matchingSubjects);
@@ -54,7 +55,7 @@ public class TimetableService {
 
         // 4. 전공 - 교양 - 자선 순으로 시간표 만들기
         int listenMajorCredit = listenMajorCreditProcess(hopeSubject, allMajorSubject);
-        List<List<List<CreateTimetable>>> majorInTimetable = majorSubjectProcess(matchingSubjects, majorCredit, removeNoTimeSubject, listenMajorCredit);
+        List<List<List<CreateTimetable>>> majorInTimetable = majorSubjectProcess(matchingSubjects, majorCredit, removeWantSubject, listenMajorCredit);
 
 
         // 원하는 전공 + 임의로 선택된 전공
@@ -78,7 +79,7 @@ public class TimetableService {
         }
 
 
-        return removeNoTimeSubject;
+        return combinedTimetables;
     }
 
 
@@ -166,6 +167,43 @@ public class TimetableService {
         return overlap;
     }
 
+    private List<CreateTimetable> removeWantProcess(List<CreateTimetable> removeNoTimeSubject, List<String> removeSubject) {
+
+        List<CreateTimetable> removeWantSubject = new ArrayList<>(removeNoTimeSubject);
+
+        List<CreateTimetable> removeSubjectList = new ArrayList<>();
+
+        for (String removeSubjectEach : removeSubject) {
+
+            // 과목명 + 교수명 입력했을 경우
+            if (removeSubjectEach.contains("/")) {
+                String removeSubjectName = removeSubjectEach.split("/")[0];
+                String removeSubjectProfName = removeSubjectEach.split("/")[1];
+
+                for (CreateTimetable timetable : removeNoTimeSubject) {
+                    String timetableSubject = timetable.getSubject();
+                    String timetableProf = timetable.getProfessor();
+                    if (timetableSubject.equals(removeSubjectName) && timetableProf.equals(removeSubjectProfName)) {
+                        removeSubjectList.add(timetable);
+                    }
+                }
+            }
+            // 과목명만 입력했을 경우
+            else {
+                for (CreateTimetable timetable : removeNoTimeSubject) {
+                    String timetableSubject = timetable.getSubject();
+                    if (timetableSubject.equals(removeSubjectEach)) {
+                        removeSubjectList.add(timetable);
+                    }
+                }
+            }
+
+        }
+        removeWantSubject.removeAll(removeSubjectList);
+
+
+        return removeWantSubject;
+    }
 
 
     /**

@@ -17,7 +17,7 @@ public class TimetableController {
     private final TimetableService timetableService;
 
     @GetMapping("make-up")
-    public ResponseEntity<List<CreateTimetable>> makeUp(
+    public ResponseEntity<List<List<CreateTimetable>>> makeUp(
             @RequestParam("major") String major,
             @RequestParam("grade") int grade,
             @RequestParam("semester") int semester,
@@ -28,7 +28,7 @@ public class TimetableController {
             @RequestParam("removeSubject") List<String> removeSubject,
             @RequestParam("noTime") List<String> noTime) throws JsonProcessingException {
 
-        List<CreateTimetable> timetableResults = timetableService.generateTimetable(
+        List<List<CreateTimetable>> timetableResults = timetableService.generateTimetable(
                 major, grade, semester, majorCredit, culturalCredit,
                 freeSelectCredit, hopeSubject, removeSubject, noTime
         );
