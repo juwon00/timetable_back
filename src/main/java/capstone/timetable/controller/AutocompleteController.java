@@ -38,7 +38,7 @@ public class AutocompleteController {
                 major, semester, query, major, semester, query
         );
         List<String> subjectAndProfessorList = results.stream()
-                .map(entry -> entry.getSubject() + " / " + entry.getProfessor() + " 교수님")
+                .map(entry -> entry.getSubject() + "/" + entry.getProfessor())
                 .distinct()
                 .collect(Collectors.toList());
         return ResponseEntity.ok(subjectAndProfessorList);
