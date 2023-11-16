@@ -3,12 +3,13 @@ package capstone.timetable.service;
 import capstone.timetable.model.CreateTimetable;
 import capstone.timetable.repository.TimetableRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional(readOnly = true)
@@ -18,8 +19,8 @@ public class TimetableService {
     private final TimetableRepository timetableRepository;
 
     public List<List<CreateTimetable>> generateTimetable(String major, int grade, int semester, int majorCredit, int culturalCredit,
-                                                   int freeSelectCredit, List<String> hopeSubject, List<String> removeSubject,
-                                                   List<String> noTime) throws JsonProcessingException {
+                                                         int freeSelectCredit, List<String> hopeSubject, List<String> removeSubject,
+                                                         List<String> noTime) throws JsonProcessingException {
 
         // 1. 전공, 학기에 맞는 모든 과목 가져오기
         List<CreateTimetable> allMajorSubject = timetableRepository.findAllSubject(major, semester);
@@ -57,7 +58,6 @@ public class TimetableService {
         int listenMajorCredit = listenMajorCreditProcess(hopeSubject, allMajorSubject);
         List<List<List<CreateTimetable>>> majorInTimetable = majorSubjectProcess(matchingSubjects, majorCredit, removeWantSubject, listenMajorCredit);
 
-
         // 원하는 전공 + 임의로 선택된 전공
         List<List<CreateTimetable>> combinedTimetables = new ArrayList<>();
         for (List<CreateTimetable> matchingBlock : transformedMatchingSubjects) {
@@ -70,23 +70,21 @@ public class TimetableService {
 
             }
         }
-        for (List<CreateTimetable> combinedBlock : combinedTimetables) {
-            System.out.println("group");
-            for (CreateTimetable x : combinedBlock) {
-                System.out.println(x.getSubject() + " " + x.getClassTime() + " " + x.getProfessor());
-            }
-            System.out.println();
-        }
+//        for (List<CreateTimetable> combinedBlock : combinedTimetables) {
+//            System.out.println("group");
+//            for (CreateTimetable x : combinedBlock) {
+//                System.out.println(x.getSubject() + " " + x.getClassTime() + " " + x.getProfessor());
+//            }
+//            System.out.println();
+//        }
 
 
         return combinedTimetables;
     }
 
 
-
-
     /**
-     *  2. 안되는 시간 처리하기
+     * 2. 안되는 시간 처리하기
      */
     public List<CreateTimetable> noTimeProcess(List<CreateTimetable> createTimetables, List<String> noTime) {
 
@@ -124,13 +122,12 @@ public class TimetableService {
                 int noTimeEnd = Integer.parseInt(noTimeParts[1].split("-")[1]);
 
                 if (classDay.equals(noTimeDay) && ((classTimeStart <= noTimeStart && noTimeStart <= classTimeEnd) ||
-                                                    (classTimeStart <= noTimeEnd && noTimeEnd <= classTimeEnd) ||
-                                                    (classTimeStart >= noTimeStart && classTimeEnd <= noTimeEnd))) {
+                        (classTimeStart <= noTimeEnd && noTimeEnd <= classTimeEnd) ||
+                        (classTimeStart >= noTimeStart && classTimeEnd <= noTimeEnd))) {
                     overlap = true;
                     break;
                 }
-            }
-            else if (timeSlotParts[1].length() >= 2 && noTimeParts[1].length() == 1) {
+            } else if (timeSlotParts[1].length() >= 2 && noTimeParts[1].length() == 1) {
                 int classTimeStart = Integer.parseInt(timeSlotParts[1].split("-")[0]);
                 int classTimeEnd = Integer.parseInt(timeSlotParts[1].split("-")[1]);
 
@@ -140,8 +137,7 @@ public class TimetableService {
                     overlap = true;
                     break;
                 }
-            }
-            else if (timeSlotParts[1].length() == 1 && noTimeParts[1].length() >= 2) {
+            } else if (timeSlotParts[1].length() == 1 && noTimeParts[1].length() >= 2) {
                 int classTimeHour = Integer.parseInt(timeSlotParts[1]);
 
                 int noTimeStart = Integer.parseInt(noTimeParts[1].split("-")[0]);
@@ -151,8 +147,7 @@ public class TimetableService {
                     overlap = true;
                     break;
                 }
-            }
-            else if (timeSlotParts[1].length() == 1 && noTimeParts[1].length() == 1) {
+            } else if (timeSlotParts[1].length() == 1 && noTimeParts[1].length() == 1) {
                 int classTimeHour = Integer.parseInt(timeSlotParts[1]);
 
                 int noTimeHour = Integer.parseInt(noTimeParts[1]);
@@ -289,9 +284,9 @@ public class TimetableService {
     }
 
 
-    public List<List<CreateTimetable>> removeShortAndOverlapSubject(List<List<CreateTimetable>> combinations){
+    public List<List<CreateTimetable>> removeShortAndOverlapSubject(List<List<CreateTimetable>> combinations) {
 
-        List<List<CreateTimetable>>  combinationsRemove = new ArrayList<>();
+        List<List<CreateTimetable>> combinationsRemove = new ArrayList<>();
         for (List<CreateTimetable> timetables : combinations) {
             for (int j = 0; j < timetables.size(); j++) {
                 for (int k = j + 1; k < timetables.size(); k++) {
@@ -385,7 +380,7 @@ public class TimetableService {
 
 
     /**
-     *  4. 전공 - 교양 - 자선 순으로 시간표 만들기
+     * 4. 전공 - 교양 - 자선 순으로 시간표 만들기
      */
     private int listenMajorCreditProcess(List<String> hopeSubject, List<CreateTimetable> allMajorSubject) {
 
@@ -404,8 +399,8 @@ public class TimetableService {
     }
 
     private List<List<List<CreateTimetable>>> majorSubjectProcess(List<CreateTimetable[][]> matchingSubjects,
-                                                          int majorCredit, List<CreateTimetable> removeNoTimeSubject,
-                                                          int listenMajorCredit) {
+                                                                  int majorCredit, List<CreateTimetable> removeNoTimeSubject,
+                                                                  int listenMajorCredit) {
 
         List<CreateTimetable> newRemoveNoTimeSubject = new ArrayList<>(removeNoTimeSubject);
 
@@ -422,7 +417,7 @@ public class TimetableService {
                 for (CreateTimetable timetable : timetableRow) {
                     if (timetable != null) {
                         flatMatchingSubjects.add(timetable.getSubject());
-                        if (!classTimes.contains(timetable.getClassTime())){
+                        if (!classTimes.contains(timetable.getClassTime())) {
                             classTimes.add(timetable.getClassTime());
                         }
                     }
@@ -455,7 +450,7 @@ public class TimetableService {
                 for (int k = 0; k < algoTimetable.get(i).size(); k++) {
                     String[] noTimeList = flatMatchingClassTime.get(i).get(j).split(",");
                     for (String noTime : noTimeList) {
-                        if (isTimeSlotOverlap(algoTimetable.get(i).get(k).getClassTime(), noTime)){
+                        if (isTimeSlotOverlap(algoTimetable.get(i).get(k).getClassTime(), noTime)) {
                             removeAlgo.add(algoTimetable.get(i).get(k));
                         }
                     }
@@ -464,54 +459,51 @@ public class TimetableService {
             algoTimetable.get(i).removeAll(removeAlgo);
         }
 
-
-
-        // 한 시간표에 가능한 전공 리스트들 만들기
+        // 오래 걸리는 부분
         List<List<List<CreateTimetable>>> resultTimetable = new ArrayList<>();
-        for (List<CreateTimetable> createTimetables : algoTimetable) {
 
-            // 가능한 모든 조합 (과목명은 거름)
+        for (List<CreateTimetable> createTimetables : algoTimetable) {
             List<List<CreateTimetable>> combTimetable = generateCombinations(createTimetables, lastMajorCredit);
 
-            // 짧은 시간표들 거름
             List<List<CreateTimetable>> removeShortTimetable = filterLongestSublists(combTimetable);
 
-            // 겹치는 시간 제거
-            List<List<CreateTimetable>> overlapTimetable = new ArrayList<>();
-            for (List<CreateTimetable> removeShortTimetableList : removeShortTimetable) {
-                for (int i = 0; i < removeShortTimetableList.size(); i++) {
-                    for (int j = i + 1; j < removeShortTimetableList.size(); j++) {
+            List<List<CreateTimetable>> nonOverlapTimetable = new ArrayList<>();
 
-                        if (removeShortTimetableList.get(j).getClassTime().split(",").length >=2 ) {
-                            String[] splitList = removeShortTimetableList.get(j).getClassTime().split(",");
+            for (List<CreateTimetable> timetableList : removeShortTimetable) {
+                boolean overlaps = false;
+
+                for (int i = 0; i < timetableList.size() - 1 && !overlaps; i++) {
+                    String timeI = timetableList.get(i).getClassTime();
+
+                    for (int j = i + 1; j < timetableList.size(); j++) {
+                        String timeJ = timetableList.get(j).getClassTime();
+
+                        if (timeJ.split(",").length >= 2) {
+                            String[] splitList = timeJ.split(",");
                             for (String split : splitList) {
-                                if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), split)) {
-                                    overlapTimetable.add(removeShortTimetableList);
+                                if (isTimeSlotOverlap(timeI, split)) {
+                                    overlaps = true;
+                                    break;
                                 }
                             }
-                        }
-                        else {
-                            if (isTimeSlotOverlap(removeShortTimetableList.get(i).getClassTime(), removeShortTimetableList.get(j).getClassTime())) {
-                                overlapTimetable.add(removeShortTimetableList);
+                        } else {
+                            if (isTimeSlotOverlap(timeI, timeJ)) {
+                                overlaps = true;
+                                break;
                             }
                         }
-
-
                     }
                 }
+                if (!overlaps) {
+                    nonOverlapTimetable.add(timetableList);
+                }
             }
-            removeShortTimetable.removeAll(overlapTimetable);
-
-            // 정제된 전공 과목 리스트
-            resultTimetable.add(removeShortTimetable);
-
+            resultTimetable.add(nonOverlapTimetable);
         }
+
 
         return resultTimetable;
     }
-
-
-
 
 
     public List<List<CreateTimetable>> generateCombinations(List<CreateTimetable> courses, int lastMajorCredit) {
